@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Concept Analytics{% endblock %}</title>
+    <link rel="stylesheet" href="/static/concept_analytics/dashboard.css">
+</head>
+<body>
+    <header>
+        <h1>Concept Analytics Dashboard</h1>
+        <nav>
+            <a href="?metric=unique_sessions&filter={{ current_filter }}">Unique Sessions</a> |
+            <a href="?metric=total_visible_seconds&filter={{ current_filter }}">Visible Seconds</a> |
+            <a href="?metric=interaction_count&filter={{ current_filter }}">Interactions</a>
+            <br>
+            <a href="?metric={{ current_metric }}&filter=human_likely">Human Likely</a> |
+            <a href="?metric={{ current_metric }}&filter=all">All Traffic</a>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

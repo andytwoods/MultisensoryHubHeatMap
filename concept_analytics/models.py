@@ -93,6 +93,17 @@ class DailyTopicSummary(models.Model):
     class Meta:
         unique_together = [("date", "topic")]
 
+class ManifestSyncState(models.Model):
+    """Singleton (pk=1) recording the manifest version last imported into this Django instance.
+    Survives server restarts; the cache is used as a fast read path in front of this table.
+    """
+    version = models.CharField(max_length=64, blank=True)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Manifest sync state"
+
+
 class DailyTransitionSummary(models.Model):
     date = models.DateField(db_index=True)
     from_page_path = models.CharField(max_length=500)

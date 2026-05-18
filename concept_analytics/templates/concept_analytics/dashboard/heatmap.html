@@ -11,7 +11,7 @@
             <div class="block-row">
                 <div class="block-label">{{ block.label }}</div>
                 <div class="block-bar-container">
-                    <div class="block-bar" style="width: {% if max_val > 0 %}{{ block.intensity|dictsort:"intensity"|last }}{% endif %}%; opacity: {{ block.intensity|default:0.1|add:0.2 }}; background-color: blue;">
+                    <div class="block-bar" style="width: {{ block.intensity_pct }}%; background-color: blue;">
                         <span class="value">{{ block.value }}</span>
                     </div>
                 </div>

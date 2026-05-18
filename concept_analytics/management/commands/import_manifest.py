@@ -12,7 +12,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         file_path = options["file"]
         with open(file_path, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
+            raw = json.load(f)
+
+        if isinstance(raw, dict):
+            version = raw.get("version", "")
+            manifest = raw.get("blocks", [])
+        else:
+            version = ""
+            manifest = raw
 
         active_ids = set()
         for entry in manifest:
@@ -38,3 +45,8 @@ class Command(BaseCommand):
         if options["purge"]:
             BlockManifestEntry.objects.exclude(block_id__in=active_ids).update(is_active=False)
             self.stdout.write("Purged inactive entries")
+
+        if version:
+            from ...manifest_sync import _save_version
+            _save_version(version)
+            self.stdout.write(f"Saved manifest version: {version}")

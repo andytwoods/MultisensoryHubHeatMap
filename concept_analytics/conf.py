@@ -6,6 +6,7 @@ DEFAULTS = {
     "MAX_PAYLOAD_BYTES": 65536,
     "IDLE_THRESHOLD_SECONDS": 60,
     "SUMMARY_TOKEN": "",
+    "SITE_URL": "",  # e.g. "https://storyfutures.github.io/multisensoryReport" — used for manifest auto-sync
 }
 
 def get_setting(key):

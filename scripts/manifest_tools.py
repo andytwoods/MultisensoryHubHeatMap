@@ -1,7 +1,17 @@
+import datetime
+import hashlib
+import json
 import os
 import re
-import json
-import hashlib
+
+
+def _compute_version(entries: list) -> str:
+    canonical = json.dumps(
+        sorted(entries, key=lambda e: e.get("block_id", "")),
+        sort_keys=True, ensure_ascii=True,
+    )
+    return hashlib.sha256(canonical.encode()).hexdigest()[:12]
+
 
 def scan_mdx_for_tracked_blocks(dir_path):
     """
@@ -65,7 +75,13 @@ def scan_mdx_for_tracked_blocks(dir_path):
     return manifest
 
 def generate_manifest_json(dir_path, output_file):
-    manifest = scan_mdx_for_tracked_blocks(dir_path)
+    entries = scan_mdx_for_tracked_blocks(dir_path)
+    version = _compute_version(entries)
+    manifest = {
+        "version": version,
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "blocks": entries,
+    }
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
-    return manifest
+    return entries, version

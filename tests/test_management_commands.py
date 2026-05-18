@@ -1,8 +1,10 @@
+import json
 import pytest
 from datetime import date, timedelta
 from django.core.management import call_command
 from concept_analytics.models import (
     AnalyticsSession, AnalyticsEvent,
+    BlockManifestEntry, ManifestSyncState,
     DailyBlockSummary, DailyTopicSummary, DailyTransitionSummary,
 )
 
@@ -46,6 +48,60 @@ def test_refresh_creates_transition_summary():
     assert DailyTransitionSummary.objects.filter(
         date=today, from_page_path="/docs/intro", to_page_path="/docs/scent"
     ).exists()
+
+@pytest.mark.django_db
+def test_import_manifest_new_format(tmp_path):
+    manifest = {
+        "version": "abc123def456",
+        "generated_at": "2026-05-14T12:00:00Z",
+        "blocks": [
+            {"block_id": "b1", "topic": "sound", "concept": "", "content_type": "section",
+             "label": "Intro", "page_path": "/docs/sound", "display_order": 0,
+             "content_hash": "aabb", "position_hash": "ccdd"},
+        ],
+    }
+    f = tmp_path / "manifest.json"
+    f.write_text(json.dumps(manifest), encoding="utf-8")
+    call_command("import_manifest", str(f))
+
+    assert BlockManifestEntry.objects.filter(block_id="b1").exists()
+    assert ManifestSyncState.objects.get(pk=1).version == "abc123def456"
+
+
+@pytest.mark.django_db
+def test_import_manifest_legacy_list_format(tmp_path):
+    entries = [
+        {"block_id": "b2", "topic": "light", "concept": "", "content_type": "section",
+         "label": "", "page_path": "/docs/light", "display_order": 0,
+         "content_hash": "aabb", "position_hash": "ccdd"},
+    ]
+    f = tmp_path / "manifest.json"
+    f.write_text(json.dumps(entries), encoding="utf-8")
+    call_command("import_manifest", str(f))
+
+    assert BlockManifestEntry.objects.filter(block_id="b2").exists()
+    # No version in legacy format — no ManifestSyncState row created
+    assert not ManifestSyncState.objects.filter(pk=1).exists()
+
+
+@pytest.mark.django_db
+def test_import_manifest_purge_marks_inactive(tmp_path):
+    BlockManifestEntry.objects.create(block_id="old-block", page_path="/docs/old")
+    manifest = {
+        "version": "vvv",
+        "blocks": [
+            {"block_id": "new-block", "topic": "", "concept": "", "content_type": "",
+             "label": "", "page_path": "/docs/new", "display_order": 0,
+             "content_hash": "", "position_hash": ""},
+        ],
+    }
+    f = tmp_path / "manifest.json"
+    f.write_text(json.dumps(manifest), encoding="utf-8")
+    call_command("import_manifest", str(f), "--purge")
+
+    assert not BlockManifestEntry.objects.get(block_id="old-block").is_active
+    assert BlockManifestEntry.objects.get(block_id="new-block").is_active
+
 
 @pytest.mark.django_db
 def test_refresh_idempotent():

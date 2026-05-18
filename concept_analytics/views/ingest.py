@@ -1,11 +1,11 @@
 import json
 import logging
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from ..models import AnalyticsSession, AnalyticsEvent
 from ..validators import validate_ingest_payload
@@ -14,9 +14,34 @@ from ..conf import get_setting
 
 logger = logging.getLogger(__name__)
 
+_RATE_LIMIT = 60  # requests per IP per minute
+
+
+def _get_client_ip(request) -> str:
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    return xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR", "")
+
+
+def _detect_device_class(user_agent: str) -> str:
+    ua = user_agent.lower()
+    if any(x in ua for x in ("ipad", "tablet", "kindle")):
+        return "tablet"
+    if any(x in ua for x in ("mobile", "android", "iphone", "ipod", "blackberry", "windows phone")):
+        return "mobile"
+    return "desktop"
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class IngestView(View):
     def post(self, request, *args, **kwargs):
+        # 1. IP-based rate limiting (60 req/min)
+        ip = _get_client_ip(request)
+        rl_key = f"analytics_rl_{ip}"
+        count = cache.get(rl_key, 0)
+        if count >= _RATE_LIMIT:
+            return JsonResponse({"error": "Too many requests"}, status=429)
+        cache.set(rl_key, count + 1, timeout=60)
+
         # 2. Check Content-Type
         if request.content_type not in ("application/json", "text/plain"):
              return JsonResponse({"error": "Unsupported Media Type"}, status=415)
@@ -45,10 +70,20 @@ class IngestView(View):
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-        # 7. Score session
+        # 7. Manifest version check — trigger background sync on mismatch
+        manifest_version = data.get("manifest_version", "")
+        if manifest_version:
+            from ..manifest_sync import get_known_version, trigger_manifest_sync
+            if manifest_version != get_known_version():
+                site_url = get_setting("SITE_URL")
+                if site_url:
+                    trigger_manifest_sync(site_url, manifest_version)
+
+        # 8. Score session
         user_agent = request.headers.get("User-Agent", "")
         events_data = data["events"]
         human_likelihood = score_session(user_agent, events_data)
+        device_class = _detect_device_class(user_agent)
 
         # 8. get_or_create AnalyticsSession
         session_id = data["session_id"]
@@ -57,21 +92,22 @@ class IngestView(View):
             defaults={
                 "landing_path": data["page_path"],
                 "referrer_domain": data.get("referrer_domain", ""),
+                "device_class": device_class,
                 "human_likelihood": human_likelihood,
                 "is_suspicious": human_likelihood == "bot_likely"
             }
         )
         if not created:
             session.human_likelihood = human_likelihood
+            session.device_class = device_class
             if human_likelihood == "bot_likely":
                 session.is_suspicious = True
             session.save()
 
-        # 9. Create AnalyticsEvent
+        # 9. Create AnalyticsEvent records (skip duplicates)
         accepted_count = 0
         for event_data in events_data:
             seq = event_data["event_sequence"]
-            # Skip duplicate (session, event_sequence) pairs silently
             if AnalyticsEvent.objects.filter(session=session, event_sequence=seq).exists():
                 continue
 

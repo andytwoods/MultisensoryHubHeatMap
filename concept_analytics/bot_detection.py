@@ -1,4 +1,5 @@
 import re
+from .conf import get_setting
 
 def score_session(user_agent, events):
     if not user_agent:
@@ -6,7 +7,7 @@ def score_session(user_agent, events):
 
     # 2. bot patterns
     bot_patterns = [
-        "bot", "crawler", "spider", "scraper", "curl", "wget", 
+        "bot", "crawler", "spider", "scraper", "curl", "wget",
         "python-requests", "java/", "go-http", "headless"
     ]
     ua_lower = user_agent.lower()
@@ -14,8 +15,10 @@ def score_session(user_agent, events):
         if pattern in ua_lower:
             return "bot_likely"
 
-    # 3. too many events
-    if len(events) > 30:
+    # 3. too many events — use the validated max as the ceiling; the validator
+    # already rejects batches above this, so anything higher is fabricated.
+    max_events = get_setting("MAX_EVENTS_PER_BATCH")
+    if len(events) > max_events:
         return "bot_likely"
 
     if not events:

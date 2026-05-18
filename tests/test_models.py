@@ -1,6 +1,6 @@
 import pytest
 from django.utils import timezone
-from concept_analytics.models import AnalyticsSession, AnalyticsEvent, BlockManifestEntry
+from concept_analytics.models import AnalyticsSession, AnalyticsEvent, BlockManifestEntry, ManifestSyncState
 
 @pytest.mark.django_db
 def test_session_create():
@@ -39,3 +39,18 @@ def test_intersection_ratio_null():
     s = AnalyticsSession.objects.create(session_id="ratio-test")
     e = AnalyticsEvent.objects.create(session=s, event_sequence=1, page_path="/", event_type="page_view")
     assert e.intersection_ratio is None
+
+
+@pytest.mark.django_db
+def test_manifest_sync_state_create():
+    state = ManifestSyncState.objects.create(pk=1, version="abc123def456")
+    assert state.version == "abc123def456"
+    assert state.synced_at is not None
+
+
+@pytest.mark.django_db
+def test_manifest_sync_state_singleton_update():
+    ManifestSyncState.objects.create(pk=1, version="aaaaaaaaaaaa")
+    ManifestSyncState.objects.filter(pk=1).update(version="bbbbbbbbbbbb")
+    assert ManifestSyncState.objects.get(pk=1).version == "bbbbbbbbbbbb"
+    assert ManifestSyncState.objects.count() == 1

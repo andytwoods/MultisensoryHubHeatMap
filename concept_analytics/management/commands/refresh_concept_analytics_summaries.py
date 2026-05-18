@@ -26,8 +26,11 @@ class Command(BaseCommand):
             self.refresh_daily_summaries(d)
 
     def refresh_daily_summaries(self, d):
-        # 1. DailyBlockSummary
-        events_on_day = AnalyticsEvent.objects.filter(received_at__date=d)
+        # 1. DailyBlockSummary — exclude bot/suspicious sessions
+        events_on_day = AnalyticsEvent.objects.filter(
+            received_at__date=d,
+            session__is_suspicious=False,
+        )
         
         # Aggregate by (block_id, block_version_id)
         block_groups = events_on_day.values("block_id", "block_version_id", "topic", "concept").annotate(

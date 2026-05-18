@@ -1,7 +1,9 @@
 import json
 import pytest
+from unittest.mock import patch
+from django.core.cache import cache
 from django.test import Client
-from concept_analytics.models import AnalyticsSession, AnalyticsEvent
+from concept_analytics.models import AnalyticsSession, AnalyticsEvent, ManifestSyncState
 
 VALID_PAYLOAD = {
     "session_id": "test-session-01",
@@ -113,6 +115,65 @@ def test_bot_session_marked_suspicious(client):
     session = AnalyticsSession.objects.get(session_id="bot-session-01")
     assert session.is_suspicious is True
     assert session.human_likelihood == "bot_likely"
+
+@pytest.mark.django_db
+def test_ingest_manifest_version_match_no_sync(client):
+    ManifestSyncState.objects.create(pk=1, version="abc123def456")
+    payload = {**VALID_PAYLOAD, "manifest_version": "abc123def456"}
+    with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
+        client.post(
+            "/concept-analytics/ingest/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_ORIGIN=ORIGIN,
+        )
+        mock_sync.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_ingest_manifest_version_mismatch_triggers_sync(client, settings):
+    settings.CONCEPT_ANALYTICS = {
+        **settings.CONCEPT_ANALYTICS,
+        "SITE_URL": "https://example.com",
+    }
+    ManifestSyncState.objects.create(pk=1, version="old-version-xxx")
+    payload = {**VALID_PAYLOAD, "manifest_version": "new-version-yyy"}
+    with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
+        client.post(
+            "/concept-analytics/ingest/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_ORIGIN=ORIGIN,
+        )
+        mock_sync.assert_called_once_with("https://example.com", "new-version-yyy")
+
+
+@pytest.mark.django_db
+def test_ingest_manifest_version_mismatch_no_site_url_no_sync(client):
+    ManifestSyncState.objects.create(pk=1, version="old")
+    payload = {**VALID_PAYLOAD, "manifest_version": "new"}
+    with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
+        client.post(
+            "/concept-analytics/ingest/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_ORIGIN=ORIGIN,
+        )
+        mock_sync.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_ingest_no_manifest_version_no_sync(client):
+    payload = VALID_PAYLOAD  # no manifest_version key
+    with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
+        client.post(
+            "/concept-analytics/ingest/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_ORIGIN=ORIGIN,
+        )
+        mock_sync.assert_not_called()
+
 
 @pytest.mark.django_db
 def test_no_ip_stored(client):

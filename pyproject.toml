@@ -15,7 +15,7 @@ dependencies = [
 include = ["concept_analytics*"]
 
 [tool.setuptools.package-data]
-concept_analytics = ["templates/**/*.html", "templates/**/*.txt"]
+concept_analytics = ["templates/**/*.html", "templates/**/*.txt", "static/**/*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings_test"

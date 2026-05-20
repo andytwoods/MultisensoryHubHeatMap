@@ -19,7 +19,7 @@ class Command(BaseCommand):
         else:
             days = options["days"]
             today = date.today()
-            target_dates = [today - timedelta(days=i) for i in range(1, days + 1)]
+            target_dates = [today - timedelta(days=i) for i in range(0, days)]
 
         for d in target_dates:
             self.stdout.write(f"Refreshing summaries for {d}...")

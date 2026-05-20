@@ -74,11 +74,12 @@ def scan_mdx_for_tracked_blocks(dir_path):
                         
     return manifest
 
-def generate_manifest_json(dir_path, output_file):
+def generate_manifest_json(dir_path, output_file, report_name=""):
     entries = scan_mdx_for_tracked_blocks(dir_path)
     version = _compute_version(entries)
     manifest = {
         "version": version,
+        "report_name": report_name,
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "blocks": entries,
     }

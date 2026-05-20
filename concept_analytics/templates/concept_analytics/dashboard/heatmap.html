@@ -1,24 +1,40 @@
 {% extends "concept_analytics/dashboard/base.html" %}
 
 {% block content %}
-<div class="heatmap-container">
-    {% for path, page in pages.items %}
-    <div class="page-card">
-        <h3>{{ page.title }}</h3>
-        <p class="path">{{ path }}</p>
-        <div class="blocks">
-            {% for block in page.blocks %}
-            <div class="block-row">
-                <div class="block-label">{{ block.label }}</div>
-                <div class="block-bar-container">
-                    <div class="block-bar" style="width: {{ block.intensity_pct }}%; background-color: blue;">
-                        <span class="value">{{ block.value }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+<div class="visitor-panel">
+    <div class="visitor-header">
+        <span class="visitor-title">Visitors — last 28 days</span>
+        <span class="visitor-total">{{ total_visitors }} sessions total</span>
     </div>
+    <div class="visitor-chart">
+        {% for day in daily_visitors %}
+        <div class="visitor-col" title="{{ day.date }}: {{ day.count }}">
+            <div class="visitor-bar" style="height:{{ day.pct }}%"></div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="visitor-axis">
+        <span>{{ visitor_chart_start }}</span>
+        <span>{{ visitor_chart_end }}</span>
+    </div>
+</div>
+
+<div class="heatmap-doc">
+    {% for path, page in pages.items %}
+    <section class="heatmap-section">
+        <h2 class="section-title">{{ page.title }}</h2>
+        <table class="block-table">
+            {% for block in page.blocks %}
+            <tr>
+                <td class="col-spark">
+                    <div class="block-spark"><div class="block-spark-fill" style="width:{{ block.intensity_pct }}%"></div></div>
+                </td>
+                <td class="col-value">{{ block.value }}<span class="col-pct"> {{ block.intensity_pct }}%</span></td>
+                <td class="col-label">{{ block.label }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
     {% endfor %}
 </div>
 {% endblock %}

@@ -10,13 +10,50 @@
     <header>
         <h1>Concept Analytics Dashboard</h1>
         <nav>
-            <a href="?metric=unique_sessions&filter={{ current_filter }}">Unique Sessions</a> |
-            <a href="?metric=total_visible_seconds&filter={{ current_filter }}">Visible Seconds</a> |
-            <a href="?metric=interaction_count&filter={{ current_filter }}">Interactions</a>
-            <br>
-            <a href="?metric={{ current_metric }}&filter=human_likely">Human Likely</a> |
-            <a href="?metric={{ current_metric }}&filter=all">All Traffic</a>
+            <a href="?metric=unique_sessions&filter={{ current_filter }}&sort={{ current_sort }}&report={{ selected_report }}">Unique Sessions</a> |
+            <a href="?metric=total_visible_seconds&filter={{ current_filter }}&sort={{ current_sort }}&report={{ selected_report }}">Visible Seconds</a> |
+            <a href="?metric=interaction_count&filter={{ current_filter }}&sort={{ current_sort }}&report={{ selected_report }}">Interactions</a>
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            <a href="?metric={{ current_metric }}&filter=human_likely&sort={{ current_sort }}&report={{ selected_report }}">Human Likely</a> |
+            <a href="?metric={{ current_metric }}&filter=all&sort={{ current_sort }}&report={{ selected_report }}">All Traffic</a>
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            Sort by: <a href="?metric={{ current_metric }}&filter={{ current_filter }}&sort=document&report={{ selected_report }}">Document order</a> |
+            <a href="?metric={{ current_metric }}&filter={{ current_filter }}&sort=value&report={{ selected_report }}">Value</a>
+            {% if report_names %}
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            Report:
+            <select class="report-select" onchange="window.location.href='?metric={{ current_metric }}&filter={{ current_filter }}&sort={{ current_sort }}&report='+encodeURIComponent(this.value)">
+                <option value="">All versions</option>
+                {% for name in report_names %}
+                <option value="{{ name }}"{% if name == selected_report %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            {% if current_report_name %}
+            <span class="report-badge">deployed: {{ current_report_name }}</span>
+            {% endif %}
         </nav>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <p class="message message--{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <details class="build-panel">
+            <summary class="build-summary">Rebuild reports <span class="build-cron">(runs automatically each night)</span></summary>
+            <p class="build-notice">
+                <span class="build-hint"><strong>Sync report structure</strong> reads the current list of tracked sections from the site build and updates the dashboard page layout — run after deploying a new version of the report. <strong>Rebuild summaries</strong> re-aggregates the last 30 days of raw visitor events into the heatmap metrics. <strong>Build all</strong> does both in order.</span>
+            </p>
+            <form method="post" action="/analytics/dashboard/build/?metric={{ current_metric }}&filter={{ current_filter }}">
+                {% csrf_token %}
+                <button type="submit" name="action" value="import_manifest" class="build-btn">Sync report structure</button>
+                <button type="submit" name="action" value="refresh_summaries" class="build-btn">Rebuild summaries</button>
+                <button type="submit" name="action" value="build_all" class="build-btn build-btn--primary">Build all</button>
+            </form>
+        </details>
     </header>
     <main>
         {% block content %}{% endblock %}

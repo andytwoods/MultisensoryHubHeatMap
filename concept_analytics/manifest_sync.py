@@ -28,9 +28,9 @@ def get_known_version() -> str:
     return version
 
 
-def _save_version(version: str) -> None:
+def _save_version(version: str, report_name: str = "") -> None:
     from django.core.cache import cache
-    ManifestSyncState.objects.update_or_create(pk=1, defaults={"version": version})
+    ManifestSyncState.objects.update_or_create(pk=1, defaults={"version": version, "report_name": report_name})
     cache.set(_CACHE_KEY, version, timeout=_CACHE_TTL)
 
 
@@ -64,9 +64,10 @@ def _do_sync(site_url: str, version: str) -> None:
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             raw = json.loads(resp.read())
+        report_name = raw.get("report_name", "") if isinstance(raw, dict) else ""
         entries = raw.get("blocks", raw) if isinstance(raw, dict) else raw
         count = _import_entries(entries)
-        _save_version(version)
+        _save_version(version, report_name)
         logger.info("[manifest_sync] Imported %d blocks, version=%s from %s", count, version, url)
     except Exception:
         logger.exception("[manifest_sync] Failed to fetch/import manifest from %s", url)

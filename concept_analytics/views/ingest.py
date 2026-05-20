@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 
 _RATE_LIMIT = 60  # requests per IP per minute
 
+# Events that carry no analytical value — accepted but not persisted.
+_SKIP_EVENT_TYPES = frozenset({
+    "page_visible_heartbeat",
+    "page_hidden",
+    "session_resume",
+    "page_unload",
+    "concept_exit_view",  # superseded by delta-based heartbeats
+})
+
 
 def _get_client_ip(request) -> str:
     xff = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -87,6 +96,7 @@ class IngestView(View):
 
         # 8. get_or_create AnalyticsSession
         session_id = data["session_id"]
+        report_name = data.get("report_name", "")
         session, created = AnalyticsSession.objects.get_or_create(
             session_id=session_id,
             defaults={
@@ -94,7 +104,8 @@ class IngestView(View):
                 "referrer_domain": data.get("referrer_domain", ""),
                 "device_class": device_class,
                 "human_likelihood": human_likelihood,
-                "is_suspicious": human_likelihood == "bot_likely"
+                "is_suspicious": human_likelihood == "bot_likely",
+                "report_name": report_name,
             }
         )
         if not created:
@@ -102,11 +113,15 @@ class IngestView(View):
             session.device_class = device_class
             if human_likelihood == "bot_likely":
                 session.is_suspicious = True
+            if report_name and not session.report_name:
+                session.report_name = report_name
             session.save()
 
         # 9. Create AnalyticsEvent records (skip duplicates)
         accepted_count = 0
         for event_data in events_data:
+            if event_data["event_type"] in _SKIP_EVENT_TYPES:
+                continue
             seq = event_data["event_sequence"]
             if AnalyticsEvent.objects.filter(session=session, event_sequence=seq).exists():
                 continue

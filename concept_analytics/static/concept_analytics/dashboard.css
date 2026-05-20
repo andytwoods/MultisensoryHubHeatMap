@@ -1,16 +1,21 @@
 body {
     font-family: sans-serif;
-    line-height: 1.6;
+    line-height: 1.4;
     color: #333;
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 12px 20px;
 }
 
 header {
-    margin-bottom: 40px;
+    margin-bottom: 12px;
     border-bottom: 1px solid #eee;
-    padding-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+nav {
+    font-size: 0.85em;
+    line-height: 1.8;
 }
 
 nav a {
@@ -19,55 +24,209 @@ nav a {
     font-weight: bold;
 }
 
-.heatmap-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.page-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    width: 350px;
-    background: #f9f9f9;
-}
-
-.page-card h3 {
-    margin-top: 0;
-}
-
-.path {
-    font-size: 0.8em;
-    color: #666;
-}
-
-.block-row {
-    margin-bottom: 10px;
-}
-
-.block-label {
-    font-size: 0.9em;
-    margin-bottom: 2px;
-}
-
-.block-bar-container {
-    background: #eee;
-    height: 20px;
+.report-select {
+    font-size: 0.85em;
+    border: 1px solid #ccc;
     border-radius: 3px;
+    padding: 1px 4px;
+    color: #333;
+}
+
+.report-badge {
+    font-size: 0.8em;
+    color: #888;
+    font-style: italic;
+}
+
+.visitor-panel {
+    margin-bottom: 24px;
+    max-width: 420px;
+}
+
+.visitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.visitor-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #444;
+}
+
+.visitor-total {
+    font-size: 0.75em;
+    color: #999;
+}
+
+.visitor-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 48px;
+    background: #f7f7f7;
+    border-radius: 4px;
+    padding: 4px 4px 0 4px;
+}
+
+.visitor-col {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    cursor: default;
+}
+
+.visitor-bar {
+    width: 100%;
+    background: #4a90d9;
+    border-radius: 1px 1px 0 0;
+    min-height: 1px;
+    transition: background 0.1s;
+}
+
+.visitor-col:hover .visitor-bar {
+    background: #2070b8;
+}
+
+.visitor-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68em;
+    color: #bbb;
+    margin-top: 3px;
+    padding: 0 4px;
+}
+
+.heatmap-doc {
+    max-width: 720px;
+}
+
+.heatmap-section {
+    margin-bottom: 2em;
+}
+
+.section-title {
+    font-size: 1em;
+    font-weight: 600;
+    margin: 0 0 0.5em 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ddd;
+    color: #222;
+}
+
+.block-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 0.5em;
+}
+
+.block-table tr {
+    height: 22px;
+}
+
+.block-table td {
+    padding: 2px 6px 2px 0;
+    vertical-align: middle;
+}
+
+.col-spark {
+    width: 80px;
+}
+
+.block-spark {
+    width: 80px;
+    height: 8px;
+    background: #e8e8e8;
+    border-radius: 2px;
     overflow: hidden;
 }
 
-.block-bar {
+.block-spark-fill {
     height: 100%;
-    display: flex;
-    align-items: center;
-    padding-left: 5px;
-    color: white;
-    font-size: 0.7em;
+    background: #4a90d9;
     min-width: 2px;
 }
 
-.value {
-    margin-left: 5px;
+.col-value {
+    font-size: 0.75em;
+    color: #555;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    width: 70px;
+    padding-right: 10px;
 }
+
+.col-pct {
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+.col-label {
+    font-size: 0.82em;
+    color: #444;
+}
+
+.messages {
+    margin-top: 12px;
+}
+
+.message {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+}
+
+.message--success { background: #d4edda; color: #155724; }
+.message--error   { background: #f8d7da; color: #721c24; }
+
+.build-panel {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #f4f6f8;
+    border: 1px solid #dde;
+    border-radius: 6px;
+    font-size: 0.82em;
+}
+
+.build-summary {
+    cursor: pointer;
+    color: #555;
+    user-select: none;
+}
+
+.build-cron {
+    color: #999;
+    font-size: 0.9em;
+}
+
+.build-notice {
+    margin: 6px 0 6px 0;
+    color: #555;
+}
+
+.build-hint {
+    color: #777;
+}
+
+.build-btn {
+    padding: 6px 14px;
+    border: 1px solid #aab;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.build-btn:hover { background: #eef; }
+
+.build-btn--primary {
+    background: #0066cc;
+    color: #fff;
+    border-color: #0055aa;
+}
+
+.build-btn--primary:hover { background: #0055aa; }

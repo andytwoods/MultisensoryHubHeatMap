@@ -10,6 +10,7 @@ class AnalyticsSession(models.Model):
     browser_family = models.CharField(max_length=50, blank=True)
     is_suspicious = models.BooleanField(default=False)
     human_likelihood = models.CharField(max_length=12, default="unknown")
+    report_name = models.CharField(max_length=200, blank=True)
 
     def __str__(self):
         return self.session_id
@@ -98,6 +99,7 @@ class ManifestSyncState(models.Model):
     Survives server restarts; the cache is used as a fast read path in front of this table.
     """
     version = models.CharField(max_length=64, blank=True)
+    report_name = models.CharField(max_length=200, blank=True)
     synced_at = models.DateTimeField(auto_now=True)
 
     class Meta:

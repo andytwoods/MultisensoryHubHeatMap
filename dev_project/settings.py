@@ -72,4 +72,5 @@ CONCEPT_ANALYTICS = {
     "MAX_PAYLOAD_BYTES": 65536,
     "IDLE_THRESHOLD_SECONDS": 60,
     "SUMMARY_TOKEN": "dev-token",
+    "SITE_URL": "http://localhost:3000/multisensoryReport",
 }

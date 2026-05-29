@@ -43,14 +43,14 @@ def _import_entries(entries: list) -> int:
         BlockManifestEntry.objects.update_or_create(
             block_id=bid,
             defaults={
-                "topic": entry.get("topic", ""),
-                "concept": entry.get("concept", ""),
-                "content_type": entry.get("content_type", ""),
-                "label": entry.get("label", ""),
-                "page_path": entry.get("page_path", ""),
+                "topic": entry.get("topic", "")[:100],
+                "concept": entry.get("concept", "")[:100],
+                "content_type": entry.get("content_type", "")[:50],
+                "label": entry.get("label", "")[:500],
+                "page_path": entry.get("page_path", "")[:500],
                 "display_order": entry.get("display_order", 0),
-                "content_hash": entry.get("content_hash", ""),
-                "position_hash": entry.get("position_hash", ""),
+                "content_hash": entry.get("content_hash", "")[:80],
+                "position_hash": entry.get("position_hash", "")[:80],
                 "is_active": True,
             },
         )

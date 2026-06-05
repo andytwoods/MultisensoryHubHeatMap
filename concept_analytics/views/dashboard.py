@@ -10,7 +10,16 @@ from django.views.generic import TemplateView
 from ..models import AnalyticsSession, AnalyticsEvent, DailyBlockSummary, BlockManifestEntry, ManifestSyncState
 
 
-class BuildReportsView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class MultisensoryAccessMixin(PermissionRequiredMixin):
+    """Grants access to users with the required permission OR multisensory_admin=True."""
+
+    def has_permission(self):
+        if getattr(self.request.user, "multisensory_admin", False):
+            return True
+        return super().has_permission()
+
+
+class BuildReportsView(LoginRequiredMixin, MultisensoryAccessMixin, View):
     permission_required = "concept_analytics.view_dashboard"
 
     def _sync_manifest(self):
@@ -59,7 +68,7 @@ class BuildReportsView(LoginRequiredMixin, PermissionRequiredMixin, View):
         )
 
 
-class DashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, MultisensoryAccessMixin, TemplateView):
     template_name = "concept_analytics/dashboard/heatmap.html"
     permission_required = "concept_analytics.view_dashboard"
 

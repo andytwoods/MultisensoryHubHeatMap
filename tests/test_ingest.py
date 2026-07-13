@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import patch
 from django.core.cache import cache
 from django.test import Client
+from django.urls import reverse
 from concept_analytics.models import AnalyticsSession, AnalyticsEvent, ManifestSyncState
 
 VALID_PAYLOAD = {
@@ -23,7 +24,7 @@ def client():
 @pytest.mark.django_db
 def test_ingest_creates_session(client):
     resp = client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -34,7 +35,7 @@ def test_ingest_creates_session(client):
 @pytest.mark.django_db
 def test_ingest_creates_events(client):
     client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -44,7 +45,7 @@ def test_ingest_creates_events(client):
 @pytest.mark.django_db
 def test_ingest_wrong_origin_returns_403(client):
     resp = client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN="https://evil.example.com",
@@ -54,7 +55,7 @@ def test_ingest_wrong_origin_returns_403(client):
 @pytest.mark.django_db
 def test_ingest_bad_json_returns_400(client):
     resp = client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data="not json",
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -65,7 +66,7 @@ def test_ingest_bad_json_returns_400(client):
 def test_ingest_invalid_payload_returns_400(client):
     bad = {**VALID_PAYLOAD, "session_id": None}
     resp = client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(bad),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -75,7 +76,7 @@ def test_ingest_invalid_payload_returns_400(client):
 @pytest.mark.django_db
 def test_ingest_text_plain_content_type_accepted(client):
     resp = client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="text/plain",
         HTTP_ORIGIN=ORIGIN,
@@ -85,13 +86,13 @@ def test_ingest_text_plain_content_type_accepted(client):
 @pytest.mark.django_db
 def test_ingest_duplicate_event_sequence_skipped(client):
     client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
     )
     client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -106,7 +107,7 @@ def test_bot_session_marked_suspicious(client):
         "events": [{"event_type": "page_view", "event_sequence": 1}],
     }
     client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(payload),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,
@@ -122,7 +123,7 @@ def test_ingest_manifest_version_match_no_sync(client):
     payload = {**VALID_PAYLOAD, "manifest_version": "abc123def456"}
     with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
         client.post(
-            "/concept-analytics/ingest/",
+            reverse("concept_analytics_ingest"),
             data=json.dumps(payload),
             content_type="application/json",
             HTTP_ORIGIN=ORIGIN,
@@ -140,7 +141,7 @@ def test_ingest_manifest_version_mismatch_triggers_sync(client, settings):
     payload = {**VALID_PAYLOAD, "manifest_version": "new-version-yyy"}
     with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
         client.post(
-            "/concept-analytics/ingest/",
+            reverse("concept_analytics_ingest"),
             data=json.dumps(payload),
             content_type="application/json",
             HTTP_ORIGIN=ORIGIN,
@@ -154,7 +155,7 @@ def test_ingest_manifest_version_mismatch_no_site_url_no_sync(client):
     payload = {**VALID_PAYLOAD, "manifest_version": "new"}
     with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
         client.post(
-            "/concept-analytics/ingest/",
+            reverse("concept_analytics_ingest"),
             data=json.dumps(payload),
             content_type="application/json",
             HTTP_ORIGIN=ORIGIN,
@@ -167,7 +168,7 @@ def test_ingest_no_manifest_version_no_sync(client):
     payload = VALID_PAYLOAD  # no manifest_version key
     with patch("concept_analytics.manifest_sync.trigger_manifest_sync") as mock_sync:
         client.post(
-            "/concept-analytics/ingest/",
+            reverse("concept_analytics_ingest"),
             data=json.dumps(payload),
             content_type="application/json",
             HTTP_ORIGIN=ORIGIN,
@@ -178,7 +179,7 @@ def test_ingest_no_manifest_version_no_sync(client):
 @pytest.mark.django_db
 def test_no_ip_stored(client):
     client.post(
-        "/concept-analytics/ingest/",
+        reverse("concept_analytics_ingest"),
         data=json.dumps(VALID_PAYLOAD),
         content_type="application/json",
         HTTP_ORIGIN=ORIGIN,

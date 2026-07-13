@@ -23,7 +23,14 @@ def scan_mdx_for_tracked_blocks(dir_path):
     # Regex to match <TrackedBlock ...>...</TrackedBlock>
     # or <TrackedBlock ... />
     # We want to extract props: blockId, topic, concept, contentType, label
-    block_re = re.compile(r'<TrackedBlock\s+([^>]*?)(?:/?>|>(.*?)</TrackedBlock>)', re.DOTALL)
+    #
+    # NOTE: the self-closing branch requires an explicit "/>" (not "/?>").
+    # "/?>" makes the slash optional, so it also matches a plain ">" — and
+    # since alternation tries branches left-to-right, that meant EVERY
+    # opening tag matched the self-closing branch first, before the engine
+    # ever tried the "capture inner content" branch. inner_content was
+    # therefore always "", and content_hash was sha256("") for every block.
+    block_re = re.compile(r'<TrackedBlock\s+([^>]*?)(?:\s*/>|>(.*?)</TrackedBlock>)', re.DOTALL)
     prop_re = re.compile(r'(\w+)=(?:{["\'](.*?)["\']}|["\'](.*?)["\']|{(.*?)})')
 
     for root, _, files in os.walk(dir_path):
